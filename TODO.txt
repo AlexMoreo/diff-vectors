@@ -1,0 +1,8 @@
+TODO list:
+- analysis in terms of O about growth, positives, imbalance, etc?
+- kernel?
+- Unify methods names across tables, text, plots
+- Discuss why our method happens to improve over impostors even though our method was proposed as a baseline there
+
+
+

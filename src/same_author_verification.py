@@ -2,7 +2,7 @@ import importlib
 import random
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import precision_recall_fscore_support
-from main import prepare_dataset, assert_opt_in, prepare_learner
+from authorship_attribution import assert_opt_in, prepare_learner
 from model.pair_impostors import PairImpostors, minmax, optimize_sigma, cosine, _impostors_task_sav
 from utils.common import get_verification_coordinates, get_parallel_slices, random_sample
 from utils.result_manager import SAVResult, check_if_already_performed, count_results
@@ -58,6 +58,24 @@ def prepare_dataset(dataset, n_authors, docs_by_author, n_open_set_authors, seed
     return Xtr, ytr, Xte, yte, Xte_out, yte_out
 
 
+def mix_training():
+    Xtr, ytr, Xte, yte, Xte_out, yte_out = prepare_dataset(opt.dataset, n_authors=opt.n_authors, docs_by_author=opt.docs_by_author,
+                                                           n_open_set_authors=opt.docs_by_author, seed=opt.seed, rawfreq=opt.rawfreq)
+    for dataset in available_datasets:
+        if dataset != opt.dataset:
+            Xtr_sec, ytr_sec, _, _, _, _ = prepare_dataset(opt.dataset, n_authors=opt.n_authors, docs_by_author=opt.docs_by_author,
+                                                           n_open_set_authors=opt.docs_by_author, seed=opt.seed, rawfreq=opt.rawfreq)
+            Xtr = np.vstack(Xtr, Xtr_sec)
+            lim_authors = max(ytr)
+            if all(isinstance(x, int) for x in ytr_sec):
+                ytr_sec = [label + lim_authors for label in ytr_sec]
+            else:
+                names_map = np.unique(ytr_sec)
+                ytr_sec = [names_map.index(label) + lim_authors for label in ytr_sec]
+            ytr.extend(ytr_sec)
+    return Xtr, ytr, Xte, yte, Xte_out, yte_out
+
+
 def main():
 
     csv = SAVResult(opt.logfile)
@@ -67,11 +85,14 @@ def main():
     n_open_authors = opt.n_open_authors
     docs_by_author = opt.docs_by_author
     docs_by_author_te = opt.docs_by_author
-    Xtr, ytr, Xte, yte, Xte_out, yte_out = prepare_dataset(
-        opt.dataset,
-        n_authors=n_authors, docs_by_author=docs_by_author, n_open_set_authors=n_open_authors,
-        seed=opt.seed, picklepath=opt.pickle, rawfreq=opt.rawfreq
-    )
+
+    if opt.mix_train == True:
+        print('Mixing train dataset')
+        Xtr, ytr, Xte, yte, Xte_out, yte_out = mix_training()
+    else:
+        Xtr, ytr, Xte, yte, Xte_out, yte_out = prepare_dataset(opt.dataset, n_authors=n_authors, docs_by_author=docs_by_author,
+                                                               n_open_set_authors=n_open_authors, seed=opt.seed, picklepath=opt.pickle,
+                                                               rawfreq=opt.rawfreq)
 
     #reset the random seed (of the dataset is generated then it uses random functions, if it is loaded, then not)
     random.seed(opt.seed)
@@ -192,8 +213,8 @@ def verification_via_attribution(cls, Xte, yte, coordinates):
     yte_ = cls.predict(Xte)
 
     truth = [yte[i] == yte[j] for i, j in coordinates]
-    pred  = [yte_[i] == yte_[j] for i, j in coordinates]
-    correct = sum([t == p for t,p in zip(truth,pred)])
+    pred = [yte_[i] == yte_[j] for i, j in coordinates]
+    correct = sum([t == p for t,p in zip(truth, pred)])
     total = len(truth)
 
     acc = correct*100./total
@@ -251,6 +272,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='This method performs experiments regarding the classification-by-pairs')
     parser.add_argument('dataset', type=str, metavar='DATASET', help=f'Name of the dataset to run experiments on')
     parser.add_argument('learner', type=str, metavar='LEARNER', help=f'Base learner (valid ones are {available_learners})')
+    parser.add_argument('--mix_train', default=False, help='whether to mix the training set with other datasets')
     parser.add_argument('--n_authors', type=int, default=10, metavar='N', help='Number of authors to extract')
     parser.add_argument('--n_open_authors', type=int, default=10, metavar='N', help='Number of authors for open set SAV')
     parser.add_argument('--docs_by_author', type=int, default=50, metavar='N', help='Number of texts by author to extract')

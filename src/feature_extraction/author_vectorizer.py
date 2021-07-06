@@ -21,6 +21,7 @@ from utils.common import StandardizeTransformer, feature_selection
 def clean_texts(texts):
     return [_remove_citations(text) for text in texts]
 
+
 #remove unwanted pattern from text
 def _remove_pattern(text, start_symbol, end_symbol, counter):
     assert counter[start_symbol] == counter[end_symbol], f'wrong number of {start_symbol}{end_symbol} found'
@@ -47,7 +48,7 @@ def _remove_citations(text):
 #THIS CLASS CREATES THE TABLE CONTAINING THE FEATURE VALUES
 # ------------------------------------------------------------------------
 function_words_dict = {
-    'lating' : ['et',  'in',  'de',  'ad',  'non',  'ut', 'cum', 'per', 'a', 'sed', 'que', 'quia', 'ex', 'sic',
+    'latin' : ['et',  'in',  'de',  'ad',  'non',  'ut', 'cum', 'per', 'a', 'sed', 'que', 'quia', 'ex', 'sic',
                 'si', 'etiam', 'idest', 'nam', 'unde', 'ab', 'uel', 'sicut', 'ita', 'enim', 'scilicet', 'nec',
                 'pro', 'autem', 'ibi',  'dum', 'uero', 'tamen', 'inter', 'ideo', 'propter', 'contra', 'sub',
                 'quomodo', 'ubi', 'super', 'iam', 'tam', 'hec', 'post', 'quasi', 'ergo', 'inde', 'e', 'tunc',
@@ -87,7 +88,7 @@ class FeatureExtractor:
         unmod_tokens = nltk.word_tokenize(text)
         return ([token.lower() for token in unmod_tokens if any(char.isalpha() for char in token)])
 
-    #---funcction words
+    # ---funcction words
     def _features_function_words_freq(self, tokens):
         feats = []
         function_words = function_words_dict.get(self.lang, stopwords.words(self.lang))
@@ -98,7 +99,7 @@ class FeatureExtractor:
             feats.append(funct_words_freq)
         return np.asarray(feats)
 
-    #---word lengths
+    # ---word lengths
     def _features_word_lengths(self, tokens, upto=23):
         feats = []
         for doc in tokens:
@@ -110,7 +111,7 @@ class FeatureExtractor:
             feats.append(tokens_count)
         return np.asarray(feats)
 
-    #---sentence lengths
+    # ---sentence lengths
     def _features_sentence_lengths(self, documents, downto=3, upto=70):
         feats = []
         for doc in documents:
@@ -123,7 +124,7 @@ class FeatureExtractor:
             feats.append(sent_count)
         return np.asarray(feats)
 
-    #---postags ngrams
+    # ---postags ngrams
     def pos_tagger(self, documents):
         lang_model = {
             'english' : 'en_core_web_sm',
@@ -223,7 +224,6 @@ class FeatureExtractor:
     def fit_transform(self, texts, labels):
         pos_tags = self.pos_tagger(texts) if self.post_ngrams else None
         return self.fit(texts, labels, pos_tags=pos_tags).transform(texts, labels, pos_tags=pos_tags)
-
 
 
 def pos_tagger_task(documents, job, lang_model):

@@ -164,6 +164,10 @@ class PairSAVClassifier(BaseEstimator):
                 self.cls = self.cls.best_estimator_
             self.cls = CalibratedClassifierCV(self.cls, cv=5, ensemble=False).fit(self.XPtr, self.yPtr)
 
+    # not sure if this is ok but  'PairSAVClassifier' object has no attribute 'predict' '
+    def predict(self, X):
+        return self.cls.predict(X)
+
     @classmethod
     def diff_vectors(cls, Xa, Xb):
         # return Xa.multiply(Xb)

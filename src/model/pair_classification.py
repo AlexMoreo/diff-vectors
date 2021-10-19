@@ -244,6 +244,8 @@ class PairSAVClassifier(BaseEstimator):
     def calibrate(self, X, y):
         if not self.isfit:
             self.fit(X, y)
+        else:
+            print('SAV function already fit. Skipping')
         if not hasattr(self.learner, 'predict_proba'):
             print(f'the classifier is not probabilistic... calibrating')
             if isinstance(self.learner, GridSearchCV):

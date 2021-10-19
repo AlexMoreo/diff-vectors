@@ -11,9 +11,9 @@ for seed in {0..9} ; do
         for authors in 10 ; do
             for docs in 10 50 ; do
                 pickle="../pickles/$dataset-A$authors-D$docs-S$seed$raw.pickle"
-                for method in LRbin PairLRknnbin PairLRlinearbin; do
+                for method in PairLRlinearbin_wl; do # PairLRknnbin_wl
                     common="--n_authors=$authors --docs_by_author=$docs --seed $seed --pickle $pickle $raw"
-                    python authorship_verification.py $dataset $method LR $common --logfile=../logbin/results_$dataset-$method.csv
+                    python authorship_verification_withauthorsknown.py $dataset $method LR $common --logfile=../logbin/results_$dataset-$method-wl.csv
                 done
                 rm $pickle
             done

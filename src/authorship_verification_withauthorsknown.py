@@ -1,4 +1,5 @@
 import sklearn.preprocessing
+from sklearn import clone
 
 from common import prepare_learner
 from utils.result_manager import AttributionResult, check_if_already_performed
@@ -29,6 +30,11 @@ def main():
     # classifier training
     t_init = time()
 
+    if (opt.method in ['PairLRknnbin_wl', 'PairLRlinearbin_wl']):
+        sav_function = prepare_sav_function()
+        sav_function.fit(Xtr, ytr)
+        print('[train of SAV function ended.]')
+
     # verification as a binary task, independent for each author (attribution is unavailable)
     mlb = MultiLabelBinarizer()
     ytr = mlb.fit_transform(ytr.reshape(-1, 1))
@@ -37,12 +43,10 @@ def main():
     ys = []
     train_times = 0
     test_times = 0
-    # Xtr = sklearn.preprocessing.normalize(Xtr)
-    # Xte = sklearn.preprocessing.normalize(Xte)
     for i in range(ytr.shape[1]):
         print(f'processing author {i+1}/{ytr.shape[1]}')
-        cls = prepare_verifier()
 
+        cls = prepare_verifier(clone(sav_function))
         cls.fit(Xtr, ytr[:,i])
         train_time = time() - t_init
 
@@ -103,26 +107,25 @@ def prepare_dataset():
     return Xtr, ytr, Xte, yte, vectorizer_time
 
 
-def prepare_verifier(Cs=[1, 10, 100, 1000]):
-
+def prepare_sav_function(Cs=[1, 10, 100, 1000]):
     base_learner, maxinst = prepare_learner(Cs, opt.learner)
+    pos = -1  # -1 stands for all
+    neg = -1  # -1 stands for the same number as pos
+    max = 15000//2 if opt.learner=='SVM' else 50000
+    sav = PairSAVClassifier(base_learner, pos, neg, max)
+    return sav
 
+
+def prepare_verifier(sav_function, Cs=[1, 10, 100, 1000]):
+    base_learner, maxinst = prepare_learner(Cs, opt.learner)
     if (opt.method == 'LRbin'):
         cls = base_learner
-
-    elif (opt.method in ['PairLRknnbin', 'PairLRlinearbin']):
-        pos = -1  # -1 stands for all
-        neg = -1  # -1 stands for the same number as pos
-        max = 15000//2 if opt.learner=='SVM' else 50000
-        sav = PairSAVClassifier(base_learner, pos, neg, max, verification_task=True)
-        if opt.method=='PairLRknnbin':
-            if opt.k != -1: opt.method+=f'-k{opt.k}'
-            cls = PairAAClassifier(sav, cls_policy='knn', k=opt.k)
-        elif opt.method=='PairLRlinearbin':
-            cls = PairAAClassifier(sav, cls_policy='linear', learner=base_learner)
-
+    elif opt.method=='PairLRknnbin_wl':
+        if opt.k != -1: opt.method+=f'-k{opt.k}'
+        cls = PairAAClassifier(sav_function, cls_policy='knn', k=opt.k)
+    elif opt.method=='PairLRlinearbin_wl':
+        cls = PairAAClassifier(sav_function, cls_policy='linear', learner=base_learner)
     return cls
-
 
 def assert_opt_in(option, option_name, valid):
     assert option in valid, f'unknown {option_name}, valid ones are {valid}'
@@ -131,12 +134,12 @@ def assert_opt_in(option, option_name, valid):
 if __name__ == '__main__':
 
     available_datasets = {'imdb62', 'pan2011', 'victorian', 'arxiv', 'pan2020'}
-    available_methods = {'LR', 'LRbin', 'PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin'}
+    available_methods = {'LRbin', 'PairLRknnbin_wl', 'PairLRlinearbin_wl'}
     available_learners = {'LR', 'SVM'}
 
     # Training settings
-    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Verification '
-                                                 '(methods LRbin PairLRknnbin and PairLRlinerbin)')
+    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Verification (methods '
+                                                 'LR PairLRknnbin_wl and PairLRlinearbin_wl, LRbin)')
     parser.add_argument('dataset', type=str, metavar='STR',
                         help=f'Name of the dataset to run experiments on (valid ones are {available_datasets})')
     parser.add_argument('method', type=str, help=f'Classification method (valid ones are {available_methods})')

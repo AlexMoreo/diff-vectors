@@ -7,6 +7,7 @@ import scipy
 from sklearn.feature_extraction.text import TfidfVectorizer
 import spacy
 from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 import string
 import itertools
@@ -155,15 +156,16 @@ class FeatureExtractor:
         if self.post_ngrams:
             self.tfidf_post = TfidfVectorizer(analyzer='word', ngram_range=(3, 4), use_idf=use_idf, norm=norm).fit(pos_tags)
         if self.punctuation:
-            self.tfidf_punctuation = TfidfVectorizer(analyzer='char', vocabulary=string.punctuation, use_idf=use_idf, norm=norm).fit(texts)
+            self.tfidf_punctuation = TfidfVectorizer(analyzer='char', vocabulary=string.punctuation, use_idf=use_idf, norm=norm, min_df=3).fit(texts)
         if self.word_ngrams:
-            self.tfidf_words = TfidfVectorizer(analyzer='word', use_idf=use_idf, norm=norm).fit(texts)
+            self.tfidf_words = TfidfVectorizer(analyzer='word', use_idf=use_idf, norm=norm, min_df=3).fit(texts)
         if self.char_ngrams:
             self.tfidf_charngrams = TfidfVectorizer(analyzer='char', ngram_range=(2, 5), use_idf=use_idf, norm=norm).fit(texts)
         # self.tfidf_wordngrams = TfidfVectorizer(analyzer='word', ngram_range=(2, 3), use_idf=use_idf, norm=norm).fit(texts)
         if self.standardize:
             self.standardizer_dense = StandardizeTransformer()
         self.feature_selector_sparse = SelectKBest(chi2, k=self.max_num_feats)
+
         return self
 
     def transform(self, texts, labels=None, pos_tags=None):
@@ -200,7 +202,8 @@ class FeatureExtractor:
         # sparsefeatures.append(self.tfidf_wordngrams.transform(texts))
         if len(sparsefeatures)>0:
             sparsefeatures = scipy.sparse.hstack(sparsefeatures)
-            if sparsefeatures.shape[1] > self.max_num_feats:
+            if self.max_num_feats!=-1 and sparsefeatures.shape[1] > self.max_num_feats:
+                print('num features orig ', sparsefeatures.shape[1])
                 if labels is not None:
                     sparsefeatures = self.feature_selector_sparse.fit_transform(sparsefeatures, labels)
                 else:

@@ -7,7 +7,7 @@ docs_by_author=50
 
 #log="--logfile ../log-sav/SAV_dist.csv"
 
-learner=SVM
+learner=LR
 
 for seed in {0..9} ; do
     for dataset in victorian pan2011 imdb62 ; do

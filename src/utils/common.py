@@ -1,6 +1,7 @@
 from sklearn.feature_selection import SelectKBest, chi2
 import numpy as np
 import scipy
+from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from sklearn.metrics import pairwise_distances
 from joblib import Parallel, delayed
@@ -15,24 +16,41 @@ def feature_selection(X, y, Xte, num_feats):
     return X, Xte
 
 
+# class StandardizeTransformer:
+#
+#     def __init__(self, axis=0):
+#         self.axis = axis
+#         self.yetfit=False
+#
+#     def fit(self, X):
+#         std=np.std(X, axis=self.axis, ddof=1)
+#         self.std = np.clip(std, 1e-5, None)
+#         self.mean = np.mean(X, axis=self.axis)
+#         self.yetfit=True
+#         return self
+#
+#     def transform(self, X):
+#         if not self.yetfit: 'transform called before fit'
+#         return (X - self.mean) / self.std
+#
+#     def fit_transform(self, X):
+#         return self.fit(X).transform(X)
+
 class StandardizeTransformer:
 
     def __init__(self, axis=0):
         self.axis = axis
         self.yetfit=False
+        self.scaler = StandardScaler()
 
     def fit(self, X):
-        print('fitting Standardizer')
-        std=np.std(X, axis=self.axis, ddof=1)
-        self.std = np.clip(std, 1e-5, None)
-        self.mean = np.mean(X, axis=self.axis)
+        self.scaler.fit(X)
         self.yetfit=True
-        print('done')
         return self
 
     def transform(self, X):
         if not self.yetfit: 'transform called before fit'
-        return (X - self.mean) / self.std
+        return self.scaler.transform(X)
 
     def fit_transform(self, X):
         return self.fit(X).transform(X)
@@ -101,7 +119,7 @@ def pairwise_diff(diff, X1, X2=None):
     diffs = list(itertools.chain.from_iterable(diffs))
 
     P = np.zeros(shape=(n, m))
-    for (i,j),diff_i in zip(joblist_coordinates,diffs):
+    for (i,j), diff_i in zip(joblist_coordinates,diffs):
         P[i,j] = diff_i
 
     if symmetric:
@@ -128,7 +146,7 @@ def get_parallel_slices(n_tasks, n_jobs=-1):
 # given a target vector containing the true classes generates a list of index coordinates for all distinct pairs
 # to test for verification (if balanced=True then all positive pairs are generated and an equal number of negative pairs
 # is randomly sampled from all negatives -- which are comparatively many more)
-# if subsample is especified (setting the sample size), then a (balanced--if requested) subsample is returned
+# if subsample is specified (by setting the subsample arg), then a (balanced--if requested) subsample is returned
 def get_verification_coordinates(y, balanced=True, subsample=-1, shuffle=True):
     nD = len(y)
     x_coordinates = np.array([(i, j) for i in range(nD) for j in range(i + 1, nD)])
@@ -140,7 +158,7 @@ def get_verification_coordinates(y, balanced=True, subsample=-1, shuffle=True):
             x_coordinates[y_coordinates==1], # all positives
             x_coordinates[y_coordinates==0][np.random.choice(n_negatives, size=n_positives, replace=False)] # a random subsample
         ])
-    if subsample!=-1 and subsample < len(x_coordinates):
+    if subsample != -1 and subsample < len(x_coordinates):
         y_coordinates = np.array([y[i] == y[j] for i, j in x_coordinates])
         total = len(y_coordinates)
         n_positives = y_coordinates.sum()

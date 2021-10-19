@@ -7,8 +7,8 @@ from collections import Counter
 class LabelledCorpus:
 
     def __init__(self, documents, labels):
-        if not isinstance(documents, np.ndarray): documents = np.asarray(documents)
-        if not isinstance(labels, np.ndarray): labels = np.asarray(labels)
+        documents = np.asarray(documents)
+        labels = np.asarray(labels)
         self.data = documents
         self.target = labels
 
@@ -105,7 +105,6 @@ class AuthorshipDataset(ABC):
                 if l not in recode:
                     recode[l] = len(recode)
             self.test_out.target = np.array([recode[l] for l in self.test_out.target])
-
 
     def group_by(self, docs, authors):
         return {i: docs[authors == i].tolist() for i in np.unique(authors)}

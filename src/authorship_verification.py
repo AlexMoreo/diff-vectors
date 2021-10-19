@@ -1,3 +1,5 @@
+import sklearn.preprocessing
+
 from common import prepare_learner
 from utils.result_manager import AttributionResult, check_if_already_performed
 from feature_extraction.author_vectorizer import FeatureExtractor
@@ -26,14 +28,34 @@ def main():
 
     # classifier training
     t_init = time()
-    cls, ytr, yte = prepare_classifier(ytr=ytr, yte=yte)
-    cls.fit(Xtr, ytr)
-    train_time = time() - t_init
 
-    # classifier test
-    t_init = time()
-    yte_ = cls.predict(Xte)
-    test_time = time() - t_init
+    # verification as a binary task, independent for each author (attribution is unavailable)
+    mlb = MultiLabelBinarizer()
+    ytr = mlb.fit_transform(ytr.reshape(-1, 1))
+    yte = mlb.transform(yte.reshape(-1, 1))
+
+    ys = []
+    train_times = 0
+    test_times = 0
+    # Xtr = sklearn.preprocessing.normalize(Xtr)
+    # Xte = sklearn.preprocessing.normalize(Xte)
+    for i in range(ytr.shape[1]):
+        print(f'processing author {i+1}/{ytr.shape[1]}')
+        cls = prepare_verifier()
+
+        cls.fit(Xtr, ytr[:,i])
+        train_time = time() - t_init
+
+        # classifier test
+        t_init = time()
+        yte_ = cls.predict(Xte)
+        test_time = time() - t_init
+
+        train_times += train_time
+        test_times += test_time
+        ys.append(yte_)
+
+    yte_ = np.vstack(ys).T
 
     # evaluation
     acc_attr, f1_attr_macro, f1_attr_micro = evaluation_attribution(yte, yte_)
@@ -42,7 +64,7 @@ def main():
     # output
     num_el = cls.n_pairs_ if isinstance(cls, PairAAClassifier) else Xtr.shape[0]
     csv.append(opt.dataset, opt.seed, opt.n_authors, opt.docs_by_author, opt.method, num_el,
-               vectorizer_time, train_time, test_time,
+               vectorizer_time, train_times, test_times,
                acc_attr, f1_attr_macro, f1_attr_micro, f1_verif_micro, f1_verif_macro)
     csv.close()
 
@@ -81,33 +103,26 @@ def prepare_dataset():
     return Xtr, ytr, Xte, yte, vectorizer_time
 
 
-def prepare_classifier(Cs=[1,10,100,1000], ytr=None, yte=None):
+def prepare_verifier(Cs=[1, 10, 100, 1000]):
 
     base_learner, maxinst = prepare_learner(Cs, opt.learner)
 
-    if (opt.method in ['LR', 'LRbin']):
+    if (opt.method == 'LRbin'):
         # attribution and verification, where verification is resolved via single-label attribution first
         cls = base_learner
 
-    elif (opt.method in ['PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin']):
+    elif (opt.method in ['PairLRknnbin', 'PairLRlinearbin']):
         pos = -1  # -1 stands for all
         neg = -1  # -1 stands for the same number as pos
         max = 15000//2 if opt.learner=='SVM' else 50000
-        sav = PairSAVClassifier(base_learner, pos, neg, max)
-        if opt.method.startswith('PairLRknn'):
+        sav = PairSAVClassifier(base_learner, pos, neg, max, verification_task=True)
+        if opt.method=='PairLRknnbin':
             if opt.k != -1: opt.method+=f'-k{opt.k}'
             cls = PairAAClassifier(sav, cls_policy='knn', k=opt.k)
-        elif opt.method.startswith('PairLRlinear'):
+        elif opt.method=='PairLRlinearbin':
             cls = PairAAClassifier(sav, cls_policy='linear', learner=base_learner)
 
-    if opt.method.endswith('bin'):
-        # verification as a binary task, independent for each author (attribution is unavailable)
-        mlb = MultiLabelBinarizer()
-        ytr = mlb.fit_transform(ytr.reshape(-1, 1))
-        yte = mlb.transform(yte.reshape(-1, 1))
-        cls = OneVsRestClassifier(cls, n_jobs=1)
-
-    return cls, ytr, yte
+    return cls
 
 
 def assert_opt_in(option, option_name, valid):

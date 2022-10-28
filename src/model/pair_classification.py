@@ -261,7 +261,7 @@ class PairSAVClassifier(BaseEstimator):
 
 class DistanceSAVClassifier:
 
-    def __init__(self, pos, neg, max = -1, metric='euclidean', n_jobs=-1):
+    def __init__(self, pos, neg, max=-1, metric='euclidean', n_jobs=-1):
         self.pos_request = pos
         self.neg_request = neg
         self.max_request = max

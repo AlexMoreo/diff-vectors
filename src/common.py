@@ -6,7 +6,7 @@ from sklearn.svm import LinearSVC
 def prepare_learner(Cs, learner):
     if learner == 'LR':
         print('returning LR')
-        learner = LogisticRegressionCV(Cs=Cs, n_jobs=1, cv=5)
+        learner = LogisticRegressionCV(Cs=Cs, n_jobs=-1, cv=5)
         # learner = LogisticRegression()
         max = 50000
     elif learner == 'SVM':

@@ -1,8 +1,12 @@
 TODO list:
-- analysis in terms of O about growth, positives, imbalance, etc?
-- kernel?
-- Unify methods names across tables, text, plots
-- Discuss why our method happens to improve over impostors even though our method was proposed as a baseline there
+- same_author_verification.py: recover the impostors
+- same_author_verification.py: I have changed the name of the methods to match the ones we use in the paper,
+    the plot generation should be refactored.
+- same_author_verification.py: replicate all experiments?
+- same_author_verification.py: clean comments
+- authorship_attribution.py: seems that the sets are not incremental as in same_author_verification? check if there is
+    some implicit order in the pickle; oh, yes, seems that consistency is kept in the pickle which is generated
+    in the script...
 
 
 

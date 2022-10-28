@@ -113,7 +113,7 @@ def prepare_verifier(Cs=[1, 10, 100, 1000]):
     elif (opt.method in ['PairLRknnbin', 'PairLRlinearbin']):
         pos = -1  # -1 stands for all
         neg = -1  # -1 stands for the same number as pos
-        max = 15000//2 if opt.learner=='SVM' else 50000
+        max = 50000
         sav = PairSAVClassifier(base_learner, pos, neg, max, verification_task=True)
         if opt.method=='PairLRknnbin':
             if opt.k != -1: opt.method+=f'-k{opt.k}'

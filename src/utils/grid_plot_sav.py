@@ -23,15 +23,16 @@ for result in glob('../log-sav/SAV_*.csv'):
     dfs.append(df)
 df = pd.concat(dfs)
 
-df.method = df.method.apply(lambda x: x.replace('LR-close', 'StdVectors-Attr'))
-df.method = df.method.apply(lambda x: x.replace('LRPairknn-close', 'DiffVectors-SAV'))
-df.method = df.method.apply(lambda x: x.replace('LRPairknn-att-close', 'DiffVectors-Attr'))
-df.method = df.method.apply(lambda x: x.replace('LRPairknn-open', 'DiffVectors'))
+df.method = df.method.apply(lambda x: x.replace('Dist-cos', 'STD-CosDist'))
+df.method = df.method.apply(lambda x: x.replace('LR-close', 'STD-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('LRPairknn-close', 'DV'))
+df.method = df.method.apply(lambda x: x.replace('LRPairknn-att-close', 'DV-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('LRPairknn-open', 'DV'))
 df.method = df.method.apply(lambda x: x.replace('Impostors-open', 'Impostors'))
-df.method = df.method.apply(lambda x: x.replace('SVM-close', 'StdVectors-Attr-SVM'))
-df.method = df.method.apply(lambda x: x.replace('SVMPairknn-close', 'DiffVectors-SAV-SVM'))
-df.method = df.method.apply(lambda x: x.replace('SVMPairknn-att-close', 'DiffVectors-Attr-SVM'))
-df.method = df.method.apply(lambda x: x.replace('SVMPairknn-open', 'DiffVectors-SVM'))
+df.method = df.method.apply(lambda x: x.replace('SVM-close', 'STD-2xAA-SVM'))
+df.method = df.method.apply(lambda x: x.replace('SVMPairknn-close', 'DV-SVM'))
+df.method = df.method.apply(lambda x: x.replace('SVMPairknn-att-close', 'DV-2xAA-SVM'))
+df.method = df.method.apply(lambda x: x.replace('SVMPairknn-open', 'DV-SVM'))
 df.method = df.method.apply(lambda x: x.replace('-close', ''))
 df.method = df.method.apply(lambda x: x.replace('-open', ''))
 
@@ -70,14 +71,14 @@ plots_request = ['acc']
 plot_format='pdf'
 
 for plotvalue in tqdm(plots_request, desc='plotting mode==close'):
-    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['DiffVectors-SAV', 'DiffVectors-SAV-SVM'])
+    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['DV', 'DV-2xAA', 'STD-CosDist', 'STD-2xAA'])
 
 for plotvalue in tqdm(plots_request, desc='plotting mode==open'):
-    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['Dist-cos', 'DiffVectors', 'DiffVectors-SVM', 'Impostors'])
+    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['DV', 'STD-CosDist', 'Impostors'])
 
 
 #for plotvalue in tqdm(plots_request, desc='plotting mode==close'):
-#    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['Dist-cos', 'DiffVectors-SAV', 'DiffVectors-Attr', 'StdVectors-Attr'])
+#    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['Dist-cos', 'DV', 'DV-2xAA', 'STD-2xAA'])
 
 #for plotvalue in tqdm(plots_request, desc='plotting mode==open'):
 #    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['Dist-cos', 'DiffVectors', 'Impostors'])

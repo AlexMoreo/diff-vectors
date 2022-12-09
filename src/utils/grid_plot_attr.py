@@ -7,7 +7,7 @@ import os
 logpath = '../log'
 plotpath = '../plot'
 
-filter_suffix=['tmp']
+filter_suffix=['tmp', 'LRbin']
 
 dfs = []
 for result in glob('../log/results_*.csv'):
@@ -25,9 +25,9 @@ df = df[df.dataset!='arxiv']
 # df['log(trsize)'] = pd.np.log(df['trainsize'])
 df['macro-$F_1$'] = df['f1_verif']
 # df.method = df.method.apply(lambda x: x.replace('CLS', 'LR'))
-df.method = df.method.apply(lambda x: x.replace('PairLR', 'DiffVectors-'))
-df.method = df.method.apply(lambda x: x.replace('LRbin', 'StdVectors-Verif'))
-df.method = df.method.apply(lambda x: x.replace('LR', 'StdVectors-Attr'))
+df.method = df.method.apply(lambda x: x.replace('PairLR', 'DV-'))
+df.method = df.method.apply(lambda x: x.replace('LRbin', 'STD-$m$xAV'))
+df.method = df.method.apply(lambda x: x.replace('LR', 'STD'))
 #df.method = df.method.apply(lambda x: x.replace('f1_verif', 'f1'))
 
 print(df.columns)

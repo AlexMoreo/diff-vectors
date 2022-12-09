@@ -1,6 +1,7 @@
 import random
-from main import assert_opt_in
-from same_author_verification import prepare_dataset, prepare_learner
+
+from authorship_verification import prepare_dataset, assert_opt_in
+from same_author_verification import prepare_learner, load_dataset
 from model.pair_impostors import PairImpostors, minmax, optimize_sigma, cosine
 from same_author_verification import random_sample
 from utils.common import get_verification_coordinates, get_parallel_slices
@@ -39,7 +40,7 @@ def main():
     n_open_authors = opt.n_open_authors
     docs_by_author = opt.docs_by_author
     docs_by_author_te = opt.docs_by_author
-    Xtr, ytr, Xte, yte, Xte_out, yte_out = prepare_dataset(
+    Xtr, ytr, Xte, yte, Xte_out, yte_out = load_dataset(
         opt.dataset,
         n_authors=n_authors, docs_by_author=docs_by_author, n_open_set_authors=n_open_authors,
         seed=opt.seed, picklepath=opt.pickle, rawfreq=opt.rawfreq
@@ -52,7 +53,7 @@ def main():
     # classifier instantiation
     base_learner = prepare_learner(Cs=[1, 10, 100, 1000], learner=opt.learner)
 
-    max = 15000 // 2 if opt.learner == 'SVM' else 50000
+    max = 50000
 
     Xte, yte = random_sample(Xte, yte, cat_size=docs_by_author_te)
     Xte_out, yte_out = random_sample(Xte_out, yte_out, cat_size=docs_by_author_te)

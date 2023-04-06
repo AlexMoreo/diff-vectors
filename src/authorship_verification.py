@@ -24,7 +24,7 @@ def main():
     csv = AttributionResult(opt.logfile)
 
     # dataset preparation
-    Xtr, ytr, Xte, yte, vectorizer_time = prepare_dataset()
+    Xtr, ytr, Xte, yte, vectorizer_time = prepare_dataset(opt)
 
     # classifier training
     t_init = time()
@@ -69,7 +69,7 @@ def main():
     csv.close()
 
 
-def prepare_dataset():
+def prepare_dataset(opt):
     # prebuilt_dataset = f'../pickles/{opt.dataset}-A{opt.n_authors}-D{opt.docs_by_author}-S{opt.seed}.pickle'
     if opt.pickle and os.path.exists(opt.pickle):
         print('pre-built dataset exists, loading...')

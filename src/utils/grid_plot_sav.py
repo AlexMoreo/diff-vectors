@@ -83,7 +83,7 @@ for plotvalue in tqdm(plots_request, desc='plotting mode==open'):
 
 
 #for plotvalue in tqdm(plots_request, desc='plotting mode==close'):
-#    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['Dist-cos', 'DiffVectors-SAV', 'DiffVectors-Attr', 'StdVectors-Attr'])
+#    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['Dist-cos', 'DV', 'DV-2xAA', 'STD-2xAA'])
 
 #for plotvalue in tqdm(plots_request, desc='plotting mode==open'):
 #    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['Dist-cos', 'DiffVectors', 'Impostors'])

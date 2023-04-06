@@ -7,7 +7,7 @@ import os
 logpath = '../log'
 plotpath = '../plot'
 
-filter_suffix=['tmp']
+filter_suffix=['tmp', 'LRbin']
 
 dfs = []
 for result in glob('../log/results_*.csv'):
@@ -26,7 +26,7 @@ df = df[df.dataset!='arxiv']
 df['macro-$F_1$'] = df['f1_verif']
 # df.method = df.method.apply(lambda x: x.replace('CLS', 'LR'))
 df.method = df.method.apply(lambda x: x.replace('PairLRknn', 'Lazy AA'))
-df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'LzStacked AA'))
+df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'Stacked AA'))
 df.method = df.method.apply(lambda x: x.replace('LRbin', 'STD-Bin'))
 df.method = df.method.apply(lambda x: x.replace('LR', 'STD AA'))
 #df.method = df.method.apply(lambda x: x.replace('f1_verif', 'f1'))

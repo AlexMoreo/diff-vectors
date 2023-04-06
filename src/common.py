@@ -1,9 +1,11 @@
+import numpy as np
 from sklearn.linear_model import LogisticRegressionCV, SGDClassifier, LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import LinearSVC
 
 
-def prepare_learner(Cs, learner):
+def prepare_learner(learner):
+    Cs = np.logspace(-3, 3, 7)
     if learner == 'LR':
         print('returning LR')
         learner = LogisticRegressionCV(Cs=Cs, n_jobs=-1, cv=5)

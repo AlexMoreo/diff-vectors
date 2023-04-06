@@ -50,7 +50,7 @@ def main():
     np.random.seed(opt.seed)
 
     # classifier instantiation
-    base_learner = prepare_learner(Cs=[1, 10, 100, 1000], learner=opt.learner)
+    base_learner = prepare_learner(learner=opt.learner)
 
     max = 15000 // 2 if opt.learner == 'SVM' else 50000
 

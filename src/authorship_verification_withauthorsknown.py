@@ -107,8 +107,8 @@ def prepare_dataset():
     return Xtr, ytr, Xte, yte, vectorizer_time
 
 
-def prepare_sav_function(Cs=[1, 10, 100, 1000]):
-    base_learner, maxinst = prepare_learner(Cs, opt.learner)
+def prepare_sav_function():
+    base_learner, maxinst = prepare_learner(opt.learner)
     pos = -1  # -1 stands for all
     neg = -1  # -1 stands for the same number as pos
     max = 15000//2 if opt.learner=='SVM' else 50000
@@ -116,8 +116,8 @@ def prepare_sav_function(Cs=[1, 10, 100, 1000]):
     return sav
 
 
-def prepare_verifier(sav_function, Cs=[1, 10, 100, 1000]):
-    base_learner, maxinst = prepare_learner(Cs, opt.learner)
+def prepare_verifier(sav_function):
+    base_learner, maxinst = prepare_learner(opt.learner)
     if (opt.method == 'LRbin'):
         cls = base_learner
     elif opt.method=='PairLRknnbin_wl':

@@ -25,9 +25,10 @@ df = df[df.dataset!='arxiv']
 # df['log(trsize)'] = pd.np.log(df['trainsize'])
 df['macro-$F_1$'] = df['f1_verif']
 # df.method = df.method.apply(lambda x: x.replace('CLS', 'LR'))
-df.method = df.method.apply(lambda x: x.replace('PairLR', 'DiffVectors-'))
-df.method = df.method.apply(lambda x: x.replace('LRbin', 'StdVectors-Verif'))
-df.method = df.method.apply(lambda x: x.replace('LR', 'StdVectors-Attr'))
+df.method = df.method.apply(lambda x: x.replace('PairLRknn', 'Lazy AA'))
+df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'LzStacked AA'))
+df.method = df.method.apply(lambda x: x.replace('LRbin', 'STD-Bin'))
+df.method = df.method.apply(lambda x: x.replace('LR', 'STD AA'))
 #df.method = df.method.apply(lambda x: x.replace('f1_verif', 'f1'))
 
 print(df.columns)
@@ -62,7 +63,7 @@ plots_request = ['macro-$F_1$']#, 'f1_attr_macro'] #, 'trainsize', 'time_tr', 't
 #plots_request = ['time_tr', 'time_te']
 
 for plotvalue in plots_request:
-    dofacetgrid(df, plotvalue, saveto=f'{plotpath}/{plotvalue}.pdf')
+    dofacetgrid(df, plotvalue, saveto=f'{plotpath}/{plotvalue}_.pdf')
 
 print('done!')
 

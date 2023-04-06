@@ -6,20 +6,20 @@ logpath = '../log'
 
 filter_suffix=['tmp']
 dfs = []
-for result in glob('../log/results_*.csv'):
+for result in glob('../log/results_arxiv*.csv'):
     read_it = True
     for suff in filter_suffix:
         if result.endswith(f'{suff}.csv'):
             read_it=False
     if not read_it: continue
-    df = pd.read_csv(result,sep='\t')
+    df = pd.read_csv(result, sep='\t')
     dfs.append(df)
 df = pd.concat(dfs)
 
-df.method = df.method.apply(lambda x: x.replace('PairLRknn', 'DiffVectors-knn'))
-df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'DiffVectors-linear'))
-df.method = df.method.apply(lambda x: x.replace('LRbin', 'StdVectors-Verif'))
-df.method = df.method.apply(lambda x: x.replace('LR', 'StdVectors-Attr'))
+df.method = df.method.apply(lambda x: x.replace('PairLRknn', 'Lazy AA'))
+df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'Stacked AA'))
+df.method = df.method.apply(lambda x: x.replace('LRbin', 'STD-Bin'))
+df.method = df.method.apply(lambda x: x.replace('LR', 'STD-AA'))
 
 from scipy.stats import ttest_ind_from_stats
 
@@ -37,7 +37,6 @@ def ttest(mean1,std1, count1, mean2, std2, count2):
     return np.array([symbol(pval) for pval in pvalues])
 
 
-
 def generate_latex_table(df, path, metric='f1'):
     pv = df.pivot_table(index='method', values=metric, aggfunc=[np.mean, np.std, np.size]).reset_index()
 
@@ -51,16 +50,17 @@ def generate_latex_table(df, path, metric='f1'):
     pv = pv.drop(columns='size', level=0)
     open(path, 'wt').write(pv.to_latex(index=False, bold_rows=True, float_format="{:0.3f}".format))
 
+
 metric='f1_attr_macro'
-generate_latex_table(df, f'../latex/attr_arxiv_{metric}.tex', metric=metric)
+generate_latex_table(df, f'../latex/attr_arxiv_{metric}-r1.tex', metric=metric)
 
 metric='f1_attr_micro'
-generate_latex_table(df, f'../latex/attr_arxiv_{metric}.tex', metric=metric)
+generate_latex_table(df, f'../latex/attr_arxiv_{metric}-r1.tex', metric=metric)
 
-metric='f1_verif'
-generate_latex_table(df, f'../latex/attr_arxiv_{metric}.tex', metric=metric)
+# metric='f1_verif'
+# generate_latex_table(df, f'../latex/attr_arxiv_{metric}-r1.tex', metric=metric)
 
-metric='acc_verif'
-generate_latex_table(df, f'../latex/attr_arxiv_{metric}.tex', metric=metric)
+# metric='acc_verif'
+# generate_latex_table(df, f'../latex/attr_arxiv_{metric}-r1.tex', metric=metric)
 
 

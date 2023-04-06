@@ -4,15 +4,15 @@ from glob import glob
 import pandas as pd
 import os
 from tqdm import tqdm
+from os.path import join
 
-logpath = '../log-sav'
-plotpath = '../plot-sav-acc'
+logpath = '../log-sav-r1'
+plotpath = '../plot-sav-r1'
 
 filter_suffix=['_', '_arxiv']
 
 dfs = []
-for result in glob('../log-sav/SAV_*.csv'):
-# for result in glob('../log-sav/SAV_dist.csv'):
+for result in glob(join(logpath, 'SAV_*.csv')):
     read_it = True
     for suff in filter_suffix:
         if result.endswith(f'{suff}.csv'):
@@ -23,11 +23,17 @@ for result in glob('../log-sav/SAV_*.csv'):
     dfs.append(df)
 df = pd.concat(dfs)
 
+df.method = df.method.apply(lambda x: x.replace('LR-close', 'STD-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('LRStdVectors-Attr', 'STD-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('Dist-cos', 'STD-CosDist'))
+df.method = df.method.apply(lambda x: x.replace('LR-DiffVectors-SAV', 'DV-Bin'))
+df.method = df.method.apply(lambda x: x.replace('LRDiffVectors-Attr', 'DV-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('Impostors-open', 'Impostors'))
+# deprecated ones (still useful for old logs)
 df.method = df.method.apply(lambda x: x.replace('LR-close', 'StdVectors-Attr'))
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-close', 'DiffVectors-SAV'))
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-att-close', 'DiffVectors-Attr'))
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-open', 'DiffVectors'))
-df.method = df.method.apply(lambda x: x.replace('Impostors-open', 'Impostors'))
 df.method = df.method.apply(lambda x: x.replace('SVM-close', 'StdVectors-Attr-SVM'))
 df.method = df.method.apply(lambda x: x.replace('SVMPairknn-close', 'DiffVectors-SAV-SVM'))
 df.method = df.method.apply(lambda x: x.replace('SVMPairknn-att-close', 'DiffVectors-Attr-SVM'))
@@ -70,10 +76,10 @@ plots_request = ['acc']
 plot_format='pdf'
 
 for plotvalue in tqdm(plots_request, desc='plotting mode==close'):
-    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['DiffVectors-SAV', 'DiffVectors-SAV-SVM'])
+    dofacetgrid(df_close, plotvalue, saveto=f'{plotpath}/{plotvalue}-close.{plot_format}', hue_order=['DV-Bin', 'DV-2xAA', 'STD-CosDist', 'STD-2xAA'])
 
 for plotvalue in tqdm(plots_request, desc='plotting mode==open'):
-    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['Dist-cos', 'DiffVectors', 'DiffVectors-SVM', 'Impostors'])
+    dofacetgrid(df_open, plotvalue, saveto=f'{plotpath}/{plotvalue}-open.{plot_format}', hue_order=['DV-Bin', 'STD-CosDist', 'Impostors'])
 
 
 #for plotvalue in tqdm(plots_request, desc='plotting mode==close'):

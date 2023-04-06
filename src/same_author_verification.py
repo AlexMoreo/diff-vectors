@@ -1,8 +1,5 @@
 import importlib
 import random
-
-import numpy as np
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import precision_recall_fscore_support
 from authorship_attribution import assert_opt_in, prepare_learner
 from model.pair_impostors import PairImpostors, minmax, optimize_sigma, cosine, _impostors_task_sav
@@ -10,8 +7,6 @@ from utils.common import get_verification_coordinates, get_parallel_slices, rand
 from utils.result_manager import SAVResult, check_if_already_performed, count_results
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairAAClassifier, DistanceSAVClassifier, PairSAVClassifier
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.svm import LinearSVC
 from utils.evaluation import *
 import os
 import argparse
@@ -20,8 +15,7 @@ import pickle
 from sklearn.base import clone
 from joblib import Parallel, delayed
 import itertools
-import scipy
-from scipy.sparse import issparse
+import pathlib
 
 
 def load_dataset(dataset, n_authors, docs_by_author, n_open_set_authors, seed=42, picklepath=None, rawfreq=False):
@@ -61,65 +55,6 @@ def load_dataset(dataset, n_authors, docs_by_author, n_open_set_authors, seed=42
 
     return Xtr, ytr, Xte, yte, Xte_out, yte_out
 
-# this was not used in the final version
-# def mix_training(author_offset):
-#     Xs, ys = [], []
-#     for dataset in available_datasets:
-#         if dataset != opt.dataset:
-#             if dataset == 'arxiv': continue
-#             Xtr_sec, ytr_sec, _, _, _, _ = load_dataset(dataset,
-#                                                            n_authors=opt.n_authors,
-#                                                            docs_by_author=opt.docs_by_author,
-#                                                            n_open_set_authors=opt.n_authors,
-#                                                            seed=opt.seed,
-#                                                            picklepath=f'./{dataset}.pkl')
-#
-#             assert np.issubdtype(ytr_sec.dtype, np.number), f'non numeric labels found in {dataset}'
-#             ytr_sec = np.asarray([yi + author_offset for yi in ytr_sec])
-#
-#             Xs.append(Xtr_sec)
-#             ys.append(ytr_sec)
-#             author_offset += len(np.unique(ytr_sec))
-#
-#     return [(Xi, yi) for Xi, yi in zip(Xs, ys)]
-
-
-# not used in the final version
-# def tfidf(Xtr, ytr, Xte, Xte_out, aux_Xys, rawfreq=False):
-#     # feature extraction
-#     print(f'using raw_freq = {rawfreq}')
-#     vectorizer = FeatureExtractor('english',
-#                                   cleaning=False,
-#                                   use_raw_frequencies=rawfreq,
-#                                   function_words=True,
-#                                   word_lengths=True,
-#                                   sentence_lengths=True,
-#                                   punctuation=True,
-#                                   post_ngrams=True,
-#                                   word_ngrams=True,
-#                                   char_ngrams=True,
-#                                   max_sparse_features=opt.max_features)
-#     if aux_Xys is not None:
-#         Xs, ys = list(zip(*aux_Xys))
-#         Xall = np.concatenate([Xtr]+list(Xs))
-#         yall = np.concatenate([ytr]+list(ys))
-#         vectorizer.fit(Xall, yall)
-#     else:
-#         vectorizer.fit(Xtr, ytr)
-#
-#     Xtr = vectorizer.transform(Xtr, ytr)
-#     if aux_Xys is not None:
-#         aux_Xys = [(vectorizer.transform(Xi), yi) for Xi, yi in aux_Xys]
-#     if Xte_out is not None:
-#         Xte_out = vectorizer.transform(Xte_out)
-#     Xte = vectorizer.transform(Xte)
-#
-#     # if picklepath:
-#     #     print('pickling built dataset...')
-#     #     pickle.dump((Xtr, ytr, Xte, yte, Xte_out, yte_out), open(picklepath, 'wb'), pickle.HIGHEST_PROTOCOL)
-#
-#     return Xtr, Xte, Xte_out, aux_Xys
-
 
 def main():
 
@@ -141,40 +76,12 @@ def main():
                                                         picklepath=opt.pickle,
                                                         rawfreq=opt.rawfreq)
 
-    #picklepath = './picklone_grande.pkl'
-    #if os.path.exists(picklepath):
-    #    print('loading pickle')
-    #    Xtr, ytr, Xte, yte, Xte_out, yte_out, aux_Xys = pickle.load(open(picklepath, 'rb'))
-    #    if not opt.mix_train:
-    #        aux_Xys=None
-    #else:
-        # print('generating pickle')
-        # Xtr, ytr, Xte, yte, Xte_out, yte_out = load_dataset(opt.dataset,
-        #                                                     n_authors=n_authors,
-        #                                                     docs_by_author=docs_by_author,
-        #                                                     n_open_set_authors=n_open_authors,
-        #                                                     seed=opt.seed,
-        #                                                     picklepath=opt.pickle)
-        #
-        # aux_Xys = None
-        # if opt.mix_train == True:
-        #     print('Mixing train dataset')
-        #     author_offset = len(np.unique(yte)) + len(np.unique(yte_out))
-        #     aux_Xys = mix_training(author_offset)
-        #
-        # Xtr, Xte, Xte_out, aux_Xys = tfidf(Xtr, ytr, Xte, Xte_out, aux_Xys, opt.rawfreq)
-        # data = (Xtr, ytr, Xte, yte, Xte_out, yte_out, aux_Xys)
-        # print('dumping pickle')
-        # pickle.dump(data, open(picklepath, 'wb'), pickle.HIGHEST_PROTOCOL)
-
     #reset the random seed (if the dataset is generated then it uses random functions, if it is loaded, then not)
     random.seed(opt.seed)
     np.random.seed(opt.seed)
 
     # classifier instantiation
-    base_learner, max_docs = prepare_learner(Cs=[1, 10, 100, 1000], learner=opt.learner)
-
-    #mix = '-mix' if opt.mix_train else ''
+    base_learner, max_docs = prepare_learner(learner=opt.learner)
 
     Xte, yte = random_sample(Xte, yte, cat_size=docs_by_author_te)
     Xte_out, yte_out = random_sample(Xte_out, yte_out, cat_size=docs_by_author_te)
@@ -223,21 +130,8 @@ def main():
             csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-l1-open', *verification(dist_l1_cls, Xte_out, yte_out, open_coordinates))
             csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-l2-open', *verification(dist_l2_cls, Xte_out, yte_out, open_coordinates))
             csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-cos-open', *verification(dist_cos_cls, Xte_out, yte_out, open_coordinates))
-            # variants with "mix", that we didn't use in the final version
-            # csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1, 'Dist-l1-close' + mix,
-            #            *verification(dist_l1_cls, Xte, yte, close_coordinates))
-            # csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1, 'Dist-l2-close' + mix,
-            #            *verification(dist_l2_cls, Xte, yte, close_coordinates))
-            # csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1, 'Dist-cos-close' + mix,
-            #            *verification(dist_cos_cls, Xte, yte, close_coordinates))
-            # csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-l1-open' + mix,
-            #            *verification(dist_l1_cls, Xte_out, yte_out, open_coordinates))
-            # csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-l2-open' + mix,
-            #            *verification(dist_l2_cls, Xte_out, yte_out, open_coordinates))
-            # csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_authors, -1, 'Dist-cos-open' + mix,
-            #            *verification(dist_cos_cls, Xte_out, yte_out, open_coordinates))
 
-        method=opt.learner + 'StdVectors-Attr-close'#+mix
+        method=opt.learner + 'StdVectors-Attr-close'
         if not check_if_already_performed(opt.logfile, opt.dataset, opt.seed, n_authors, docs_by_author, method):
             print('training baseline')
             base_cls.fit(Xtr, ytr)
@@ -248,7 +142,7 @@ def main():
         method = opt.learner + '-DiffVectors-SAV-close'
         if not check_if_already_performed(opt.logfile, opt.dataset, opt.seed, n_authors, docs_by_author, method):
             print('training pair cls for SAV')
-            pair_cls.fit(Xtr, ytr)#, aux_Xys=aux_Xys)
+            pair_cls.fit(Xtr, ytr)
             print('testing pair cls in SAV close set')
             r_pair_close = verification(pair_cls, Xte, yte, close_coordinates)
             csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1, opt.learner + '-DiffVectors-SAV-close', *r_pair_close)
@@ -256,15 +150,11 @@ def main():
             print('testing pair cls in SAV open set')
             r_pair_open = verification(pair_cls, Xte_out, yte_out, open_coordinates)
             csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_open_authors, docs_by_author_te, opt.learner + '-DiffVectors-SAV-open', *r_pair_open)
-            #csv.append(opt.dataset, opt.seed, 'OPEN', n_authors, docs_by_author, n_open_authors, docs_by_author_te,
-            #           opt.learner + 'Pairknn-open' + mix, *r_pair_open)
 
             print('testing SAV-via-attribution with the knn heuristic in close set')
             knn_cls.fit(Xtr, ytr)
             r_pair_att_open = verification_via_attribution(knn_cls, Xte, yte, close_coordinates)
             csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1, opt.learner + 'DiffVectors-Attr-close', *r_pair_att_open)
-            #csv.append(opt.dataset, opt.seed, 'CLOSE', n_authors, docs_by_author, n_authors, -1,
-            #           opt.learner + 'Pairknn-att-close' + mix, *r_pair_att_open)
 
         # method = 'Impostors-open'
         # if not check_if_already_performed(opt.logfile, opt.dataset, opt.seed, n_authors, docs_by_author, method):
@@ -364,10 +254,10 @@ if __name__ == '__main__':
     available_learners = {'LR', 'SVM', 'SGD'}
 
     # Training settings
-    parser = argparse.ArgumentParser(description='This method performs experiments regarding the classification-by-pairs')
+    parser = argparse.ArgumentParser(description='This method performs experiments on the same author verification'
+                                                 ' (SAV) task considering the open-set and closed-set settings.')
     parser.add_argument('dataset', type=str, metavar='DATASET', help=f'Name of the dataset to run experiments on')
     parser.add_argument('learner', type=str, metavar='LEARNER', help=f'Base learner (valid ones are {available_learners})')
-    #parser.add_argument('--mix_train', default=False, action='store_true', help='whether to mix the training set with other datasets')
     parser.add_argument('--n_authors', type=int, default=10, metavar='N', help='Number of authors to extract')
     parser.add_argument('--n_open_authors', type=int, default=10, metavar='N', help='Number of authors for open set SAV')
     parser.add_argument('--docs_by_author', type=int, default=50, metavar='N', help='Number of texts by author to extract')
@@ -389,5 +279,10 @@ if __name__ == '__main__':
         print('nothing to do here! all results were already computed. Exit')
         import sys
         sys.exit(0)
+
+    parent_dir = pathlib.Path(opt.logfile).parent
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
+
 
     main()

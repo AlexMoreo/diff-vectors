@@ -15,6 +15,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.multiclass import OneVsRestClassifier
 import importlib
 import pickle
+import pathlib
 
 
 def main():
@@ -81,9 +82,9 @@ def prepare_dataset():
     return Xtr, ytr, Xte, yte, vectorizer_time
 
 
-def prepare_classifier(Cs=[1,10,100,1000], ytr=None, yte=None):
+def prepare_classifier(ytr=None, yte=None):
 
-    base_learner, maxinst = prepare_learner(Cs, opt.learner)
+    base_learner, maxinst = prepare_learner(opt.learner)
 
     if (opt.method in ['LR', 'LRbin']):
         # attribution and verification, where verification is resolved via single-label attribution first
@@ -92,11 +93,10 @@ def prepare_classifier(Cs=[1,10,100,1000], ytr=None, yte=None):
     elif (opt.method in ['PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin']):
         pos = -1  # -1 stands for all
         neg = -1  # -1 stands for the same number as pos
-        #max = 15000//2 if opt.learner=='SVM' else 50000
         max = 50000
         sav = PairSAVClassifier(base_learner, pos, neg, max)
         if opt.method.startswith('PairLRknn'):
-            if opt.k != -1: opt.method+=f'-k{opt.k}'
+            if opt.k != -1: opt.method += f'-k{opt.k}'
             cls = PairAAClassifier(sav, cls_policy='knn', k=opt.k)
         elif opt.method.startswith('PairLRlinear'):
             cls = PairAAClassifier(sav, cls_policy='linear', learner=base_learner)
@@ -117,7 +117,7 @@ def assert_opt_in(option, option_name, valid):
 
 if __name__ == '__main__':
 
-    available_datasets = {'imdb62', 'pan2011', 'victorian', 'arxiv', 'pan2020'}
+    available_datasets = {'imdb62', 'pan2011', 'victorian', 'arxiv'}
     available_methods = {'LR', 'LRbin', 'PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin'}
     available_learners = {'LR', 'SVM'}
 
@@ -147,6 +147,10 @@ if __name__ == '__main__':
     assert opt.force or not \
         check_if_already_performed(opt.logfile, opt.dataset, opt.seed, opt.n_authors, opt.docs_by_author, opt.method), \
         'experiment already performed'
+
+    parentdir = pathlib.Path(opt.logfile).parent
+    if parentdir:
+        os.makedirs(parentdir, exist_ok=True)
 
     main()
 

@@ -103,9 +103,9 @@ def prepare_dataset():
     return Xtr, ytr, Xte, yte, vectorizer_time
 
 
-def prepare_verifier(Cs=[1, 10, 100, 1000]):
+def prepare_verifier():
 
-    base_learner, maxinst = prepare_learner(Cs, opt.learner)
+    base_learner, maxinst = prepare_learner(opt.learner)
 
     if (opt.method == 'LRbin'):
         cls = base_learner

@@ -4,22 +4,16 @@ set -x
 source activate torch
 
 dataset="arxiv"
+#raw="--rawfreq"
+raw=""
 
 for seed in {0..9} ; do
-
-    # Attribution
-    authors="-1"
-    common="--docs_by_author -1 --n_authors $authors"
-    pickle="../pickles/$dataset-A$authors-D-1-S$seed.pickle"
-    #for method in LR PairLRknn PairLRlinear LRbin ; do
-    for method in  LRbin ; do
-        python3 main.py $dataset $method LR $common --logfile=../log/results_$dataset-$method.csv --pickle $pickle --seed $seed
-    done
-    rm $pickle
-
-    # SAV
-#    common="--docs_by_author -1 --n_authors -1"
-#    python same_author_verification.py $dataset LR --logfile ../log-sav/SAV_$dataset.csv $common --n_open_authors 50 --seed $seed
+    pickle="../pickles/$dataset-A50-D-1-S$seed.pickle"
+    common="--n_authors=50 --n_open_authors=50 --docs_by_author=-1 --seed $seed --pickle $pickle $raw --logfile ../log-sav-r1/SAV_arxiv.csv"
+    python3 same_author_verification.py $dataset LR $common
+#    for method in LRbin PairLRknnbin PairLRlinearbin; do
+#        python3 authorship_verification.py $dataset $method LR $common --logfile=../logAVfor10authors/results_AV_$dataset-$method.csv
+#    done
+#    rm $pickle
 
 done
-

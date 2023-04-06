@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv('../log-sav/SAV_arxiv.csv', sep='\t')
-# df.method = df.method.apply(lambda x: x.replace('-close', ''))
-# df.method = df.method.apply(lambda x: x.replace('-open', ''))
-df.method = df.method.apply(lambda x: x.replace('LR-close', 'StdVectors-Attr'))
+df = pd.read_csv('../log-sav-r1/SAV_arxiv.csv', sep='\t')
+df.method = df.method.apply(lambda x: x.replace('LR-close', 'STD-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('LRStdVectors-Attr', 'STD-2xAA'))
+df.method = df.method.apply(lambda x: x.replace('Dist-cos', 'STD-CosDist'))
+df.method = df.method.apply(lambda x: x.replace('LR-DiffVectors-SAV', 'DV-Bin'))
+df.method = df.method.apply(lambda x: x.replace('LRDiffVectors-Attr', 'DV-2xAA'))
+# deprecated replacements... still useful for old result logs
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-close', 'DiffVectors-SAV'))
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-att-close', 'DiffVectors-Attr'))
 df.method = df.method.apply(lambda x: x.replace('LRPairknn-open', 'DiffVectors'))
@@ -15,6 +18,7 @@ df = df[df.method!='Dist-l1']
 df = df[df.method!='Dist-l2']
 from scipy.stats import ttest_ind_from_stats
 
+df['acc'] /= 100
 df_close = df.loc[df['mode']=='CLOSE']
 df_open = df.loc[df['mode']=='OPEN']
 
@@ -45,8 +49,10 @@ def generate_latex_table(df, path, metric='f1'):
 
     pv['ttest']=ttest(pv['mean'][metric], pv['std'][metric], pv['size'][metric], max_mean, max_std, max_size)
     pv = pv.drop(columns='size', level=0)
-    open(path, 'wt').write(pv.to_latex(index=False, bold_rows=True, float_format="{:0.3f}".format))
+    table = pv.to_latex(index=False, bold_rows=True, float_format="{:0.3f}".format)
+    open(path, 'wt').write(table)
+    print(table)
 
 metric='acc'
-generate_latex_table(df_close, f'../latex/sav_arxiv_close_{metric}.tex', metric=metric)
-generate_latex_table(df_open, f'../latex/sav_arxiv_open_{metric}.tex', metric=metric)
+generate_latex_table(df_close, f'../latex/sav_arxiv_close_{metric}-r1.tex', metric=metric)
+generate_latex_table(df_open, f'../latex/sav_arxiv_open_{metric}-r1.tex', metric=metric)

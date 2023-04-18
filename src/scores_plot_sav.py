@@ -1,10 +1,10 @@
 import random
 
 from authorship_verification import prepare_dataset, assert_opt_in
-from same_author_verification import prepare_learner, load_dataset
+from same_author_verification import load_dataset
 from model.pair_impostors import PairImpostors, minmax, optimize_sigma, cosine
 from same_author_verification import random_sample
-from utils.common import get_verification_coordinates, get_parallel_slices
+from utils.common import get_verification_coordinates, get_parallel_slices, prepare_learner
 from utils.result_manager import AttributionResult, SAVResult
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairSAVClassifier, DistanceSAVClassifier
@@ -36,6 +36,10 @@ def main():
         timings.write('Dataset\tmethod\ttime_tr\ttime_te\n')
 
     # dataset preparation
+    # reset the random seed (of the dataset is generated then it uses random functions, if it is loaded, then not)
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
+
     n_authors = opt.n_authors
     n_open_authors = opt.n_open_authors
     docs_by_author = opt.docs_by_author
@@ -45,10 +49,6 @@ def main():
         n_authors=n_authors, docs_by_author=docs_by_author, n_open_set_authors=n_open_authors,
         seed=opt.seed, picklepath=opt.pickle, rawfreq=opt.rawfreq
     )
-
-    # reset the random seed (of the dataset is generated then it uses random functions, if it is loaded, then not)
-    random.seed(opt.seed)
-    np.random.seed(opt.seed)
 
     # classifier instantiation
     base_learner = prepare_learner(learner=opt.learner)

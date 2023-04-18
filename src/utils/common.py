@@ -1,12 +1,19 @@
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_selection import SelectKBest, chi2
 import numpy as np
 import scipy
+from sklearn.linear_model import LogisticRegressionCV, SGDClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 from tqdm import tqdm
 from sklearn.metrics import pairwise_distances
 from joblib import Parallel, delayed
 import multiprocessing
 import itertools
+from scipy.stats import ttest_ind_from_stats
+from utils.lightweight_random_indexing import SVMLRI
 
 
 def feature_selection(X, y, Xte, num_feats):
@@ -16,31 +23,11 @@ def feature_selection(X, y, Xte, num_feats):
     return X, Xte
 
 
-# class StandardizeTransformer:
-#
-#     def __init__(self, axis=0):
-#         self.axis = axis
-#         self.yetfit=False
-#
-#     def fit(self, X):
-#         std=np.std(X, axis=self.axis, ddof=1)
-#         self.std = np.clip(std, 1e-5, None)
-#         self.mean = np.mean(X, axis=self.axis)
-#         self.yetfit=True
-#         return self
-#
-#     def transform(self, X):
-#         if not self.yetfit: 'transform called before fit'
-#         return (X - self.mean) / self.std
-#
-#     def fit_transform(self, X):
-#         return self.fit(X).transform(X)
-
 class StandardizeTransformer:
 
     def __init__(self, axis=0):
         self.axis = axis
-        self.yetfit=False
+        self.yetfit = False
         self.scaler = StandardScaler()
 
     def fit(self, X):
@@ -191,3 +178,37 @@ def random_sample(X, y, cat_size):
     X_ = scipy.sparse.vstack(X_)
     y_ = np.concatenate(y_)
     return X_, y_
+
+def prepare_learner(learner):
+    Cs = np.logspace(-3, 3, 7)
+    if learner == 'LR':
+        print('returning LR')
+        learner = LogisticRegressionCV(Cs=Cs, n_jobs=-1, cv=5)
+        # learner = LogisticRegression()
+        max = 50000
+    elif learner == 'SVM':
+        learner = CalibratedClassifierCV(SVMLRI(k=1000), cv=3, n_jobs=-1)
+        max = 10000
+    elif learner == 'SGD':
+        learner = SGDClassifier(n_jobs=-1, loss='modified_huber')
+        max = 500000
+    elif learner == 'MNB':
+        learner = MultinomialNB(alpha=0, force_alpha=True)
+        max = 50000
+    else:
+        raise ValueError('unknown learner method')
+    return learner, max
+
+
+def ttest(mean1,std1, count1, mean2, std2, count2):
+    _,pvalues = ttest_ind_from_stats(mean1, std1, count1, mean2, std2, count2)
+    def symbol(pvalue):
+        if pvalue==1:
+            return '='
+        if pvalue > 0.05:
+            return '**'
+        elif pvalue > 0.005:
+            return '*'
+        return ''
+    return np.array([symbol(pval) for pval in pvalues])
+

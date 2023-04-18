@@ -1,9 +1,9 @@
 import importlib
 import random
 from sklearn.metrics import precision_recall_fscore_support
-from authorship_attribution import assert_opt_in, prepare_learner
+from authorship_attribution import assert_opt_in
 from model.pair_impostors import PairImpostors, minmax, optimize_sigma, cosine, _impostors_task_sav
-from utils.common import get_verification_coordinates, get_parallel_slices, random_sample
+from utils.common import get_verification_coordinates, get_parallel_slices, random_sample, prepare_learner
 from utils.result_manager import SAVResult, check_if_already_performed, count_results
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairAAClassifier, DistanceSAVClassifier, PairSAVClassifier

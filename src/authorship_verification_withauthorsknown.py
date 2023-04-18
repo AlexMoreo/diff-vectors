@@ -1,7 +1,7 @@
 import sklearn.preprocessing
 from sklearn import clone
 
-from common import prepare_learner
+from utils.common import prepare_learner
 from utils.result_manager import AttributionResult, check_if_already_performed
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairAAClassifier, PairSAVClassifier

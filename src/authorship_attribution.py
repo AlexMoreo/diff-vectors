@@ -1,4 +1,4 @@
-from common import prepare_learner
+from utils.common import prepare_learner
 from utils.result_manager import AttributionResult, check_if_already_performed
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairAAClassifier, PairSAVClassifier
@@ -20,6 +20,7 @@ import pathlib
 
 def main():
 
+    # load results set if exists, otherwise creates it
     csv = AttributionResult(opt.logfile)
 
     # dataset preparation
@@ -49,7 +50,6 @@ def main():
 
 
 def prepare_dataset():
-    # prebuilt_dataset = f'../pickles/{opt.dataset}-A{opt.n_authors}-D{opt.docs_by_author}-S{opt.seed}.pickle'
     if opt.pickle and os.path.exists(opt.pickle):
         print('pre-built dataset exists, loading...')
         #(Xtr,ytr,Xte,yte,vectorizer_time) = pickle.load(open(opt.pickle, 'rb'))
@@ -90,7 +90,7 @@ def prepare_classifier(ytr=None, yte=None):
         # attribution and verification, where verification is resolved via single-label attribution first
         cls = base_learner
 
-    elif (opt.method in ['PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin']):
+    elif (opt.method in ['PairLRknn', 'PairLRlinear']):
         pos = -1  # -1 stands for all
         neg = -1  # -1 stands for the same number as pos
         max = 50000
@@ -100,13 +100,6 @@ def prepare_classifier(ytr=None, yte=None):
             cls = PairAAClassifier(sav, cls_policy='knn', k=opt.k)
         elif opt.method.startswith('PairLRlinear'):
             cls = PairAAClassifier(sav, cls_policy='linear', learner=base_learner)
-
-    if opt.method.endswith('bin'):
-        # verification as a binary task, independent for each author (attribution is unavailable)
-        mlb = MultiLabelBinarizer()
-        ytr = mlb.fit_transform(ytr.reshape(-1, 1))
-        yte = mlb.transform(yte.reshape(-1, 1))
-        cls = OneVsRestClassifier(cls, n_jobs=1)
 
     return cls, ytr, yte
 
@@ -118,14 +111,12 @@ def assert_opt_in(option, option_name, valid):
 if __name__ == '__main__':
 
     available_datasets = {'imdb62', 'pan2011', 'victorian', 'arxiv'}
-    available_methods = {'LR', 'LRbin', 'PairLRknn', 'PairLRlinear', 'PairLRknnbin', 'PairLRlinearbin'}
-    available_learners = {'LR', 'SVM'}
+    available_methods = {'LR', 'LRbin', 'PairLRknn', 'PairLRlinear'}
+    available_learners = {'LR', 'SVM', 'MNB'}
 
     # Training settings
-    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Attribution (methods '
-                                                 'LR PairLRknn and PairLRliner) and of Authorship Verification '
-                                                 '(methods LRbin PairLRknnbin and PairLRlinerbin)')
-    parser.add_argument('dataset', type=str, metavar='STR',
+    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Attribution')
+    parser.add_argument('dataset', type=str,
                         help=f'Name of the dataset to run experiments on (valid ones are {available_datasets})')
     parser.add_argument('method', type=str, help=f'Classification method (valid ones are {available_methods})')
     parser.add_argument('learner', type=str, help=f'Base learner (valid ones are {available_learners})')

@@ -3,7 +3,6 @@ set -x
 
 source activate torch
 
-#dataset="arxiv"
 
 docs_by_author=50
 

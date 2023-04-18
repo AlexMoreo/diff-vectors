@@ -1,20 +1,12 @@
-import sklearn.preprocessing
-
-from common import prepare_learner
+from utils.common import prepare_learner
 from utils.result_manager import AttributionResult, check_if_already_performed
 from feature_extraction.author_vectorizer import FeatureExtractor
 from model.pair_classification import PairAAClassifier, PairSAVClassifier
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import GridSearchCV
-#from sklearn.calibration import CalibratedClassifierCV
-from utils.calibration import CalibratedClassifierCV
-from sklearn.svm import SVC, LinearSVC
 from utils.evaluation import *
 import os
 import argparse
 from time import time
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.multiclass import OneVsRestClassifier
 import importlib
 import pickle
 
@@ -135,10 +127,8 @@ if __name__ == '__main__':
     available_learners = {'LR', 'SVM'}
 
     # Training settings
-    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Verification '
-                                                 '(methods LRbin PairLRknnbin and PairLRlinerbin)')
-    parser.add_argument('dataset', type=str, metavar='STR',
-                        help=f'Name of the dataset to run experiments on (valid ones are {available_datasets})')
+    parser = argparse.ArgumentParser(description='This method performs experiments of Authorship Verification')
+    parser.add_argument('dataset', type=str,  help=f'Name of the dataset to run experiments on (valid ones are {available_datasets})')
     parser.add_argument('method', type=str, help=f'Classification method (valid ones are {available_methods})')
     parser.add_argument('learner', type=str, help=f'Base learner (valid ones are {available_learners})')
     parser.add_argument('--n_authors', type=int, default=-1, metavar='N', help='Number of authors to extract')

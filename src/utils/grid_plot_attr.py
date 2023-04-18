@@ -4,13 +4,13 @@ from glob import glob
 import pandas as pd
 import os
 
-logpath = '../log'
-plotpath = '../plot'
+logpath = '../log-aa-bert-r1'
+plotpath = '../plot-aa-bert-r1'
 
 filter_suffix=['tmp', 'LRbin']
 
 dfs = []
-for result in glob('../log/results_*.csv'):
+for result in glob(f'{logpath}/results_*.csv'):
     read_it = True
     for suff in filter_suffix:
         if result.endswith(f'{suff}.csv'):

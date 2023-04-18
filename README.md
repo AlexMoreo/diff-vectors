@@ -138,4 +138,4 @@ optional arguments:
 
 The exact batch of experiments we have carried out are executed using the scripts:
 
-* [authverif_script.sh](src/authverif_script.sh): run the experiments reported in Section 4.7 for all datasets 
+* [av_script.sh](src/av_script.sh): run the experiments reported in Section 4.7 for all datasets 

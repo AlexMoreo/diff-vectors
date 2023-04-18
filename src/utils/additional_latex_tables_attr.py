@@ -63,11 +63,10 @@ def generate_latex_table(df, path, metric):
 
     sparse = pv[pv['vectors'] == 'Sparse']
 
-    df_embed = run_ttest_in_table(pv[pv['vectors'] == 'Embedding'])
     df_tfidf_lr = run_ttest_in_table(sparse[sparse['learner']=='LR'])
     df_tfidf_svm = run_ttest_in_table(sparse[sparse['learner']=='SVM+LRI'])
 
-    df = pd.concat([df_embed, df_tfidf_svm, df_tfidf_lr])
+    df = pd.concat([df_tfidf_svm, df_tfidf_lr])
 
     print(df)
 
@@ -80,8 +79,7 @@ def generate_latex_table(df, path, metric):
 
 dfs = []
 for learner_log, learner, vectors in [
-    ('log-aa-bert-r1', 'LR', 'Embedding'), 
-    ('log-aa-svm-r1', 'SVM+LRI', 'Sparse'), 
+    ('log-aa-svm-r1', 'SVM+LRI', 'Sparse'),
     ('log', 'LR', 'Sparse')
     ]:
     for dataset in ['pan2011', 'victorian', 'imdb62', 'arxiv']:
@@ -93,16 +91,14 @@ for learner_log, learner, vectors in [
             dfs.append(df)
 df = pd.concat(dfs)
 
-df.loc[df['method'].isin(['RoBERTa']), 'learner'] = 'linear-head'
-
-df = df[ df['method'].isin(['PairLRlinear', 'LR', 'RoBERTa']) ]
+df = df[ df['method'].isin(['PairLRlinear', 'LR']) ]
 df = df[ df['n_authors'].isin([25,-1, 100])]
 df = df[ df['docs_by_author'].isin([50,-1])]
 
 df.method = df.method.apply(lambda x: x.replace('PairLRlinear', 'DV'))
 df.method = df.method.apply(lambda x: x.replace('PairLRknn', 'DV-knn'))
 df.method = df.method.apply(lambda x: x.replace('LR', 'STD'))
-df.method = df.method.apply(lambda x: x.replace('RoBERTa', 'STD'))
+
 
 metric = 'f1_attr_macro'
 generate_latex_table(df, f'../latex/add_exp_{metric}-r1.tex', metric=metric)

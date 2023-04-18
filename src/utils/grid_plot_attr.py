@@ -4,10 +4,10 @@ from glob import glob
 import pandas as pd
 import os
 
-logpath = '../log-aa-bert-r1'
-plotpath = '../plot-aa-bert-r1'
+logpath = '../log'
+plotpath = '../plot-aa-r1'
 
-filter_suffix=['tmp', 'LRbin']
+filter_suffix=['tmp']
 
 dfs = []
 for result in glob(f'{logpath}/results_*.csv'):
